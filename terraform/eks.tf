@@ -1,46 +1,33 @@
-# terraform/eks.tf
+# terraform/network.tf
 
-provider "aws" {
-  region = var.aws_region
-}
+# Utilisation du module VPC officiel d'AWS pour créer un réseau robuste
+# Il gère automatiquement les subnets publics/privés, les tables de routage, les gateways, etc.
+module "vpc" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "5.5.2" # Utilisez une version stable
 
-# Création du bucket S3 pour les sauvegardes Velero
-resource "aws_s3_bucket" "velero_backups_s3" {
-  bucket = "${var.project_name}-velero-backups-aws"
-  
+  name = "${var.project_name}-vpc"
+  cidr = "10.0.0.0/16"
+
+  azs             = ["${var.aws_region}a", "${var.aws_region}b", "${var.aws_region}c"]
+  private_subnets = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  public_subnets  = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
+
+  enable_nat_gateway = true
+  single_nat_gateway = true
+
+  # Tags pour l'auto-découverte par le cluster EKS
+  public_subnet_tags = {
+    "kubernetes.io/cluster/${var.project_name}-eks-cluster" = "shared"
+    "kubernetes.io/role/elb"                      = "1"
+  }
+
+  private_subnet_tags = {
+    "kubernetes.io/cluster/${var.project_name}-eks-cluster" = "shared"
+    "kubernetes.io/role/internal-elb"             = "1"
+  }
+
   tags = {
-    Name        = "Velero Backups"
-    Project     = var.project_name
+    Project = var.project_name
   }
-}
-
-# NOTE: Ce qui suit est un exemple simplifié. 
-
-# Création du rôle IAM pour le cluster EKS
-resource "aws_iam_role" "eks_cluster_role" {
-  name = "${var.project_name}-eks-cluster-role"
-  assume_role_policy = jsonencode({
-    Version   = "2012-10-17",
-    Statement = [
-      {
-        Effect    = "Allow",
-        Principal = { Service = "eks.amazonaws.com" },
-        Action    = "sts:AssumeRole",
-      },
-    ],
-  })
-}
-
-# Création du cluster EKS
-resource "aws_eks_cluster" "eks" {
-  name     = "${var.project_name}-eks-cluster"
-  role_arn = aws_iam_role.eks_cluster_role.arn
-  version  = var.kubernetes_version
-
-  vpc_config {
-    # REMPLACEZ PAR VOS IDs DE SUBNETS
-    subnet_ids = ["subnet-xxxxxxxxxxxxxxxxx", "subnet-yyyyyyyyyyyyyyyyy"]
-  }
-
-  depends_on = [aws_iam_role.eks_cluster_role]
 }
