@@ -1,0 +1,39 @@
+# Pas besoin de secret grâce à Workload Identity
+credentials:
+  useSecret: false
+
+# L'identité est gérée par le client ID
+azure:
+  clientID: <VOTRE_USER_ASSIGNED_CLIENT_ID> # Remplacez par la sortie de la commande ci-dessus
+  subscriptionID: <VOTRE_AZURE_SUBSCRIPTION_ID>
+  tenantID: <VOTRE_AZURE_TENANT_ID>
+
+# Labels et annotations pour lier le Service Account
+serviceAccount:
+  server:
+    labels:
+      azure.workload.identity/use: "true"
+
+# Configuration générale
+configuration:
+  provider: azure
+  backupStorageLocation:
+    name: azure-default
+    bucket: velero # Nom du conteneur blob
+    config:
+      storageAccount: <VOTRE_AZURE_STORAGE_ACCOUNT_ID> # Remplacez par le nom du compte de stockage
+      resourceGroup: <VOTRE_AZURE_RESOURCE_GROUP>
+  volumeSnapshotLocation:
+    name: azure-default
+    config:
+      resourceGroup: <VOTRE_SNAPSHOT_RESOURCE_GROUP>
+
+# Plugins nécessaires pour Azure
+initContainers:
+  - name: velero-plugin-for-azure
+    image: velero/velero-plugin-for-azure:v1.9.0
+    volumeMounts:
+      - mountPath: /target
+        name: plugins
+
+deployNodeAgent: true

@@ -1,0 +1,28 @@
+# Pas de secret, on utilise Workload Identity
+credentials:
+  useSecret: false
+
+# Annotation pour lier le KSA au GSA
+serviceAccount:
+  server:
+    annotations:
+      iam.gke.io/gcp-service-account: <VOTRE_GSA_EMAIL> # Ex: velero-gsa@votre-projet.iam.gserviceaccount.com
+
+# Configuration générale
+configuration:
+  provider: gcp
+  backupStorageLocation:
+    name: gcp-default
+    bucket: <VOTRE_GCS_BUCKET_NAME>
+  volumeSnapshotLocation:
+    name: gcp-default
+
+# Plugins nécessaires pour GCP
+initContainers:
+  - name: velero-plugin-for-gcp
+    image: velero/velero-plugin-for-gcp:v1.9.0
+    volumeMounts:
+      - mountPath: /target
+        name: plugins
+
+deployNodeAgent: true

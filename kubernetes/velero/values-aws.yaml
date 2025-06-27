@@ -1,0 +1,33 @@
+# Ne pas créer de secret, car nous utilisons IRSA
+credentials:
+  useSecret: false
+
+# Annotation à ajouter au Service Account de Velero pour le lier au rôle IAM
+serviceAccount:
+  server:
+    annotations:
+      eks.amazonaws.com/role-arn: "arn:aws:iam::VOTRE_ACCOUNT_ID:role/VeleroRole"
+
+# Configuration générale
+configuration:
+  provider: aws
+  backupStorageLocation:
+    name: aws-default
+    bucket: votre-bucket-velero-aws # Doit correspondre au bucket créé
+    config:
+      region: votre-region-aws
+  volumeSnapshotLocation:
+    name: aws-default
+    config:
+      region: votre-region-aws
+
+# Plugins nécessaires pour AWS
+initContainers:
+  - name: velero-plugin-for-aws
+    image: velero/velero-plugin-for-aws:v1.9.0
+    volumeMounts:
+      - mountPath: /target
+        name: plugins
+
+# Déploiement du node-agent pour sauvegarder les volumes en utilisant Restic/Kopia
+deployNodeAgent: true
