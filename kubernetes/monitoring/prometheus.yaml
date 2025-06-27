@@ -1,0 +1,16 @@
+# kubernetes/monitoring/prometheus.yaml
+# TODO: Ajouter la configuration pour le déploiement de Prometheus.
+# En production, utilisez le Helm chart de Prometheus ou l'opérateur Prometheus
+# pour une configuration plus robuste et maintenable.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+    scrape_configs:
+      - job_name: 'kubernetes-pods'
+        kubernetes_sd_configs:
+        - role: pod

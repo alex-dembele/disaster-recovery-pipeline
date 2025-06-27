@@ -1,0 +1,24 @@
+# kubernetes/argocd-configs/sample-app.yaml
+# Ce manifeste déploie une application via ArgoCD
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: my-sample-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    # Le dépôt Git contenant les manifestes de votre application
+    repoURL: 'https://github.com/votre-utilisateur/mon-app-k8s.git'
+    path: deploy/
+    targetRevision: HEAD
+  destination:
+    # L'adresse du serveur Kubernetes cible
+    server: 'https://kubernetes.default.svc'
+    # Le namespace où déployer l'application
+    namespace: 'production'
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

@@ -1,0 +1,58 @@
+# kubernetes/velero-deployment.yaml
+# NOTE: Ceci est un exemple simplifié. L'installation via le client Velero ou Helm est recommandée en production.
+# Exemple pour AWS. Adapter le 'provider' et les credentials pour Azure/GCP.
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: velero
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: velero
+  namespace: velero
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: velero
+  template:
+    metadata:
+      labels:
+        component: velero
+    spec:
+      serviceAccountName: velero
+      containers:
+        - name: velero
+          image: velero/velero:v1.12.0
+          args:
+            - server
+            # MODIFIEZ LES LIGNES SUIVANTES POUR VOTRE CLOUD
+            - --provider=aws
+            - --plugins=velero/velero-plugin-for-aws:v1.8.0
+            - --bucket=votre-bucket-de-sauvegarde
+            - --backup-sync-period=60m
+            - --snapshot-location-config=region=votre-region
+            - --log-level=info
+          volumeMounts:
+            - name: cloud-credentials
+              mountPath: /credentials
+      volumes:
+        - name: cloud-credentials
+          secret:
+            secretName: cloud-credentials # Secret contenant les clés d'accès cloud
+
+---
+apiVersion: velero.io/v1
+kind: BackupStorageLocation
+metadata:
+  name: default
+  namespace: velero
+spec:
+  provider: aws # Changer pour 'azure' ou 'gcp'
+  objectStorage:
+    bucket: votre-bucket-de-sauvegarde
+  config:
+    region: votre-region
